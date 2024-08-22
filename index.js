@@ -2,6 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const logger = require('morgan');
 const helmet = require('helmet');
+const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
 const errorHandler = require('./middlewares/errorHandler');
@@ -21,6 +22,10 @@ const prisma = new PrismaClient();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cors({
+    origin: '*',
+    credentials: true
+}));
 app.use(logger('dev'));
 app.use(helmet());
 
