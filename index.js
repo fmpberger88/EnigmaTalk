@@ -22,12 +22,25 @@ const prisma = new PrismaClient();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({
-    origin: '*',
-    credentials: true
-}));
 app.use(logger('dev'));
 app.use(helmet());
+
+// _________________ CORS Configuration _________________
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174'
+];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true
+}));
 
 // ________________ Express Session ________________
 app.use(session({
