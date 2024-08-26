@@ -13,6 +13,7 @@ const redisClient = require('./config/redisClient');
 const RedisStore = require('connect-redis').default;
 const { PrismaClient } = require('@prisma/client');
 const { encrypt, decrypt } = require('./utils/encryption'); // Import der Verschlüsselungs-Utility
+const prismaMiddleware = require('./middlewares/prismaMiddleware');
 
 const app = express();
 const server = http.createServer(app);
@@ -65,6 +66,9 @@ app.use((req, res, next) => {
     }
     next();
 });
+
+// ________________ Prisma Middleware ________________
+app.use(prismaMiddleware); // Prisma Middleware hinzufügen
 
 // ________________ Routes ________________
 app.use('/auth', authRoutes);
