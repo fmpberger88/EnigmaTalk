@@ -74,29 +74,46 @@ app.use('/api', chatRoutes);
 io.on('connection', (socket) => {
     console.log('a user connected');
 
-    socket.on('sendMessage', async ({ senderId, receiverId, content }) => {
+    socket.on('sendMessage', async ({ chatId, content }) => {
+        const userId = socket.request.user.id; // Angemeldeten Benutzer als Absender nutzen
         const encryptedContent = encrypt(content); // Nachricht verschlüsseln
-        const message = await prisma.message.create({
-            data: {
-                senderId,
-                receiverId,
-                content: encryptedContent,
-            },
-        });
 
-        io.emit('message', {
-            id: message.id,
-            senderId: message.senderId,
-            receiverId: message.receiverId,
-            content: decrypt(message.content), // Unverschlüsselte Nachricht zurücksenden
-            createdAt: message.createdAt,
-        });
+        try {
+            const message = await prisma.message.create({
+                data: {
+                    senderId: userId,
+                    chatId: chatId,
+                    content: encryptedContent,
+                },
+                include: {
+                    sender: true,
+                    chat: true,
+                },
+            });
+
+            // Nachricht an alle Benutzer im Chat senden
+            io.to(`chat_${chatId}`).emit('message', {
+                id: message.id,
+                senderId: message.senderId,
+                chatId: message.chatId,
+                content: decrypt(message.content), // Unverschlüsselte Nachricht zurücksenden
+                createdAt: message.createdAt,
+            });
+        } catch (error) {
+            console.error('Error sending message:', error);
+        }
+    });
+
+    socket.on('joinChat', (chatId) => {
+        socket.join(`chat_${chatId}`);
+        console.log(`User joined chat ${chatId}`);
     });
 
     socket.on('disconnect', () => {
         console.log('user disconnected');
     });
 });
+
 
 // _________________ Error Handler _________________
 app.use(errorHandler);
