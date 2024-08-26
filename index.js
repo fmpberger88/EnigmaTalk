@@ -7,7 +7,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const errorHandler = require('./middlewares/errorHandler');
 const authRoutes = require('./routes/auth');
-const messageRoutes = require('./routes/messages');
+const chatRoutes = require('./routes/chats');
 const passport = require('./config/passport');
 const redisClient = require('./config/redisClient');
 const RedisStore = require('connect-redis').default;
@@ -68,7 +68,7 @@ app.use((req, res, next) => {
 
 // ________________ Routes ________________
 app.use('/auth', authRoutes);
-app.use('/api', messageRoutes);
+app.use('/api', chatRoutes);
 
 // ________________ Socket.IO ________________
 io.on('connection', (socket) => {

@@ -14,20 +14,27 @@ datasource db {
 }
 
 model User {
-  id               Int       @id @default(autoincrement())
-  username         String    @unique
-  password         String
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  password     String
+  sentMessages Message[] @relation("SentMessages")
+  chats        Chat[]    @relation("UserChats")
 }
 
 model Message {
-  id         Int      @id @default(autoincrement())
-  content    String
-  senderId   Int
-  receiverId Int
-  createdAt  DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  content   String
+  senderId  Int
+  chatId    Int
+  createdAt DateTime @default(now())
 
-  sender   User @relation("SentMessages", fields: [senderId], references: [id])
-  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender User @relation("SentMessages", fields: [senderId], references: [id])
+  chat   Chat @relation(fields: [chatId], references: [id])
+}
+
+model Chat {
+  id        Int       @id @default(autoincrement())
+  users     User[]    @relation("UserChats")
+  messages  Message[]
+  createdAt DateTime  @default(now())
 }
