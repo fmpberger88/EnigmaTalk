@@ -1,8 +1,5 @@
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
 
 exports.register = [
     // Validierung der Eingabedaten
@@ -25,7 +22,7 @@ exports.register = [
         const { username, password } = req.body;
         try {
             const hashedPassword = await bcrypt.hash(password, 10);
-            const user = await prisma.user.create({
+            const user = await req.prisma.user.create({
                 data: {
                     username,
                     password: hashedPassword,
@@ -37,6 +34,7 @@ exports.register = [
         }
     }
 ];
+
 
 exports.login = [
     // Validierung der Eingabedaten
@@ -73,8 +71,11 @@ exports.logout = (req, res, next) => {
 };
 
 exports.isAuthenticated = (req, res, next) => {
+    console.log('User Authenticated:', req.isAuthenticated());
+    console.log('Session:', req.session);
     if (req.isAuthenticated()) {
         return next();
     }
     res.status(401).json({ message: 'Not authenticated' });
 };
+

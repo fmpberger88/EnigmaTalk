@@ -43,6 +43,10 @@ app.use(cors({
     credentials: true
 }));
 
+// ________________ Prisma Middleware ________________
+app.use(prismaMiddleware); // Prisma Middleware hinzufügen
+
+
 // ________________ Express Session ________________
 app.use(session({
     store: new RedisStore({ client: redisClient }),
@@ -58,7 +62,9 @@ app.use(session({
 }));
 
 // ________________ Passport Configuration ________________
+app.use(passport.initialize());
 app.use(passport.session());
+
 
 app.use((req, res, next) => {
     if (req.isAuthenticated()) {
@@ -67,12 +73,10 @@ app.use((req, res, next) => {
     next();
 });
 
-// ________________ Prisma Middleware ________________
-app.use(prismaMiddleware); // Prisma Middleware hinzufügen
 
 // ________________ Routes ________________
 app.use('/auth', authRoutes);
-app.use('/api', chatRoutes);
+app.use('/api/chats', chatRoutes);
 
 // ________________ Socket.IO ________________
 io.on('connection', (socket) => {

@@ -6,7 +6,11 @@ const { register, login, logout } = require('../controllers/authController');
 const router = express.Router();
 
 router.post('/register', register);
-router.post('/login', login, passport.authenticate('local')); // Füge Passport-Authentifizierung hinzu
+
+router.post('/login', passport.authenticate('local'), (req, res) => {
+    res.json({ message: 'Login successful', user: req.user });
+});
+
 router.post('/logout', logout);
 
 module.exports = router;

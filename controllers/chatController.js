@@ -1,8 +1,5 @@
-const { PrismaClient } = require('@prisma/client');
 const { encrypt, decrypt } = require('../utils/encryption'); // Importiere die Verschlüsselungs-Utilities
 const { body, param, validationResult } = require('express-validator');
-
-const prisma = new PrismaClient();
 
 exports.createChat = async (req, res) => {
     const { username } = req.body;
@@ -10,7 +7,7 @@ exports.createChat = async (req, res) => {
 
     try {
         // Benutzer suchen, mit dem ein Chat erstellt werden soll
-        const userToChatWith = await prisma.user.findUnique({
+        const userToChatWith = await req.prisma.user.findUnique({
             where: { username },
         });
 
@@ -19,7 +16,7 @@ exports.createChat = async (req, res) => {
         }
 
         // Prüfen, ob bereits ein Chat existiert
-        const existingChat = await prisma.chat.findFirst({
+        const existingChat = await req.prisma.chat.findFirst({
             where: {
                 users: {
                     every: {
@@ -36,7 +33,7 @@ exports.createChat = async (req, res) => {
         }
 
         // Neuen Chat erstellen
-        const chat = await prisma.chat.create({
+        const chat = await req.prisma.chat.create({
             data: {
                 users: {
                     connect: [{ id: userId }, { id: userToChatWith.id }],
@@ -57,7 +54,7 @@ exports.getChats = async (req, res) => {
     const { id: userId } = req.user;
 
     try {
-        const chats = await prisma.chat.findMany({
+        const chats = await req.prisma.chat.findMany({
             where: {
                 users: {
                     some: {
@@ -100,7 +97,7 @@ exports.sendMessageToChat = [
         // Nachricht verschlüsseln
         const encryptedContent = encrypt(content);
 
-        const message = await prisma.message.create({
+        const message = await req.prisma.message.create({
             data: {
                 senderId,
                 chatId: parseInt(chatId),
@@ -124,7 +121,7 @@ exports.getMessagesInChat = [
 
         const { chatId } = req.params;
 
-        const messages = await prisma.message.findMany({
+        const messages = await req.prisma.message.findMany({
             where: { chatId: parseInt(chatId) },
             orderBy: { createdAt: 'asc' },
             include: {
@@ -156,7 +153,7 @@ exports.markMessageAsRead = [
         const { messageId } = req.params;
 
         setTimeout(async () => {
-            await prisma.message.delete({
+            await req.prisma.message.delete({
                 where: { id: parseInt(messageId) },
             });
             console.log(`Message ${messageId} deleted after 30 seconds`);

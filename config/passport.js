@@ -1,19 +1,17 @@
 const passport = require("passport");
 const LocalStrategy = require('passport-local').Strategy;
-const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
-
-const prisma = new PrismaClient();
 
 passport.use(new LocalStrategy(
     {
-        usernameField: 'username', // Hier den Benutzernamen als Feld definieren
+        usernameField: 'username',
         passwordField: 'password',
+        passReqToCallback: true,  // Damit req in der Strategie verfügbar ist
     },
-    async (username, password, done) => { // Parameter korrekt benennen: username statt email
+    async (req, username, password, done) => {
         try {
             // Benutzer anhand des Benutzernamens finden
-            const user = await prisma.user.findUnique({ where: { username } });
+            const user = await req.prisma.user.findUnique({ where: { username } });
             if (!user) {
                 return done(null, false, { message: 'Incorrect username.' });
             }
@@ -29,17 +27,17 @@ passport.use(new LocalStrategy(
         } catch (err) {
             return done(err);
         }
-    })
-);
+    }
+));
 
 passport.serializeUser((user, done) => {
     done(null, user.id); // Nur die Benutzer-ID serialisieren
 });
 
-passport.deserializeUser(async (id, done) => {
+passport.deserializeUser(async (req, id, done) => {
     try {
         // Benutzer anhand der ID finden
-        const user = await prisma.user.findUnique({ where: { id } });
+        const user = await req.prisma.user.findUnique({ where: { id } });
         if (user) {
             done(null, user); // Benutzerobjekt zurückgeben
         } else {
