@@ -15,6 +15,7 @@ exports.register = [
     // Verarbeitung der Registrierung
     async (req, res) => {
         const errors = validationResult(req);
+        console.log(errors.array())
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
@@ -31,6 +32,7 @@ exports.register = [
             res.status(201).json(user);
         } catch (err) {
             res.status(400).json({ error: 'User already exists or other error occurred' });
+            console.log(err);
         }
     }
 ];
@@ -71,11 +73,19 @@ exports.logout = (req, res, next) => {
 };
 
 exports.isAuthenticated = (req, res, next) => {
-    console.log('User Authenticated:', req.isAuthenticated());
-    console.log('Session:', req.session);
     if (req.isAuthenticated()) {
         return next();
     }
     res.status(401).json({ message: 'Not authenticated' });
 };
+
+// authController.js (in deinem Backend)
+exports.getCurrentUser = (req, res) => {
+    if (req.isAuthenticated()) {
+        res.json(req.user);
+    } else {
+        res.status(401).json({ message: 'Not authenticated' });
+    }
+};
+
 
