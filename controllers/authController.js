@@ -1,5 +1,6 @@
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
+const passport = require('../config/passport');
 
 exports.register = [
     // Validierung der Eingabedaten
@@ -15,7 +16,7 @@ exports.register = [
     // Verarbeitung der Registrierung
     async (req, res) => {
         const errors = validationResult(req);
-        console.log(errors.array())
+        // console.log(errors.array())
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
         }
@@ -32,7 +33,7 @@ exports.register = [
             res.status(201).json(user);
         } catch (err) {
             res.status(400).json({ error: 'User already exists or other error occurred' });
-            console.log(err);
+            // console.log(err);
         }
     }
 ];
@@ -58,8 +59,23 @@ exports.login = [
 
         next(); // Fortsetzen des Authentifizierungsprozesses mit Passport
     },
-    (req, res) => {
-        res.json({ message: 'Login successful', user: req.user });
+    (req, res, next) => {
+        passport.authenticate('local', (err, user, info) => {
+            if (err) {
+                return res.status(500).json({ error: 'An error occurred during authentication' });
+            }
+            if (!user) {
+                // Fehlermeldung von Passport an das Frontend weitergeben
+                return res.status(400).json({ error: info.message });
+            }
+            // Bei erfolgreicher Authentifizierung
+            req.login(user, (err) => {
+                if (err) {
+                    return res.status(500).json({ error: 'Login failed' });
+                }
+                return res.json({ message: 'Login successful', user });
+            });
+        })(req, res, next);
     }
 ];
 
