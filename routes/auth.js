@@ -1,7 +1,8 @@
 // routes/auth.js
 const express = require('express');
 const passport = require('passport');
-const { register, login, logout } = require('../controllers/authController');
+const { register, logout, getCurrentUser } = require('../controllers/authController');
+const { isAuthenticated } = require('../controllers/authController');
 
 const router = express.Router();
 
@@ -12,5 +13,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
 });
 
 router.post('/logout', logout);
+router.get('/me', isAuthenticated, getCurrentUser);  // Endpunkt für aktuellen Benutzer
+
 
 module.exports = router;
