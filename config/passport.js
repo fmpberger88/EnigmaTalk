@@ -13,19 +13,23 @@ passport.use(new LocalStrategy(
             // Benutzer anhand des Benutzernamens finden
             const user = await req.prisma.user.findUnique({ where: { username } });
             if (!user) {
+                console.log('Incorrect username.');
                 return done(null, false, { message: 'Incorrect username.' });
             }
 
             // Passwortüberprüfung
             const isMatch = await bcrypt.compare(password, user.password);
             if (!isMatch) {
+                console.log('Incorrect password.');
                 return done(null, false, { message: 'Incorrect password.' });
             }
 
             // Authentifizierung erfolgreich
+            console.log('Authentication successful for user:', user.username);
             return done(null, user);
         } catch (err) {
-            return done(err);
+            console.error('Error during authentication:', err);
+            return done(null, false, { message: 'An error occurred during authentication' });
         }
     }
 ));
