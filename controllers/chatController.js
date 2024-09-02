@@ -4,8 +4,8 @@ const { body, param, validationResult } = require('express-validator');
 exports.createChat = [
     // Validierung der Eingabedaten
     body('username')
-        .notEmpty().withMessage('Username is required')
-        .isLength({ min: 3 }).withMessage('Username must be at least 3 characters long')
+        .notEmpty().withMessage('Username(s) are required')
+        .isString().withMessage('Usernames must be a string')
         .trim()
         .escape(),
 
@@ -18,36 +18,43 @@ exports.createChat = [
         const { username } = req.body;
         const { id: userId } = req.user;
 
+        // Benutzernamen aufteilen, falls es sich um mehrere handelt (durch Kommas getrennt)
+        const usernameArray = username.split(',').map(name => name.trim());
+
         try {
-            // Benutzer suchen, mit dem ein Chat erstellt werden soll
-            const userToChatWith = await req.prisma.user.findUnique({
-                where: { username },
+            // Benutzer suchen, mit denen ein Chat erstellt werden soll
+            const usersToChatWith = await req.prisma.user.findMany({
+                where: {
+                    username: {
+                        in: usernameArray,
+                    },
+                },
+                select: {
+                    id: true,
+                    username: true,
+                },
             });
 
-            if (!userToChatWith) {
-                return res.status(404).json({ error: 'User not found' });
+            if (usersToChatWith.length !== usernameArray.length) {
+                return res.status(404).json({ error: 'One or more users not found' });
             }
+
+            // Alle Benutzer-IDs sammeln (einschließlich des aktuellen Benutzers)
+            const userIds = usersToChatWith.map(user => user.id).concat(userId);
 
             // Prüfen, ob bereits ein Chat existiert
             const existingChat = await req.prisma.chat.findFirst({
                 where: {
+                    AND: userIds.map(id => ({
+                        users: {
+                            some: { userId: id },
+                        },
+                    })),
                     users: {
                         every: {
-                            userId: { in: [userId, userToChatWith.id] },
+                            userId: { in: userIds },
                         },
                     },
-                    AND: [
-                        {
-                            users: {
-                                some: { userId: userId },
-                            },
-                        },
-                        {
-                            users: {
-                                some: { userId: userToChatWith.id },
-                            },
-                        },
-                    ],
                 },
                 include: {
                     users: {
@@ -70,10 +77,7 @@ exports.createChat = [
             const chat = await req.prisma.chat.create({
                 data: {
                     users: {
-                        create: [
-                            { user: { connect: { id: userId } } },
-                            { user: { connect: { id: userToChatWith.id } } },
-                        ],
+                        create: userIds.map(id => ({ user: { connect: { id } } })),
                     },
                 },
                 include: {
@@ -84,7 +88,7 @@ exports.createChat = [
                     },
                 },
             });
-            console.log(chat)
+            console.log(chat);
             return res.status(201).json(chat);
         } catch (error) {
             console.error('Error creating chat:', error);
@@ -92,6 +96,7 @@ exports.createChat = [
         }
     }
 ];
+
 
 
 
